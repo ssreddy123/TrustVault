@@ -1,0 +1,1100 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ================= ROOT ================= */
+
+:root {
+    --bg: #07090e;
+    --bg-secondary: #0b1018;
+
+    --surface: #101722;
+    --surface-light: #151f2d;
+
+    --border: rgba(255,255,255,0.08);
+
+    --text: #f4f7fb;
+    --muted: #8995a7;
+
+    --blue: #3985ff;
+    --blue-light: #62a3ff;
+
+    --green: #00e5a0;
+    --green-dark: #00b981;
+
+    --purple: #9870ff;
+    --red: #ff6178;
+
+    --shadow: 0 25px 70px rgba(0,0,0,0.45);
+}
+
+/* ================= RESET ================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', Arial, sans-serif;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    min-height: 100vh;
+    color: var(--text);
+
+    background:
+        radial-gradient(
+            circle at 15% 15%,
+            rgba(35,105,255,0.12),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at 85% 80%,
+            rgba(0,229,160,0.07),
+            transparent 35%
+        ),
+        linear-gradient(
+            135deg,
+            #07090e,
+            #0b1019,
+            #080a11
+        );
+
+    background-attachment: fixed;
+    overflow-x: hidden;
+}
+
+/* ================= BACKGROUND GRID ================= */
+
+body::before {
+    content: "";
+
+    position: fixed;
+    inset: 0;
+
+    pointer-events: none;
+
+    background-image:
+        linear-gradient(
+            rgba(255,255,255,0.018) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,0.018) 1px,
+            transparent 1px
+        );
+
+    background-size: 55px 55px;
+
+    mask-image:
+        linear-gradient(
+            to bottom,
+            black,
+            transparent 90%
+        );
+
+    z-index: 0;
+}
+
+/* ================= LOGIN PAGE ================= */
+
+.container {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    min-height: 100vh;
+    padding: 25px;
+}
+
+/* LOGIN CARD */
+
+.login-box {
+    position: relative;
+
+    width: 440px;
+    padding: 48px;
+
+    text-align: center;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(19,27,41,0.96),
+            rgba(10,15,25,0.98)
+        );
+
+    border: 1px solid rgba(255,255,255,0.09);
+
+    border-radius: 22px;
+
+    backdrop-filter: blur(25px);
+
+    box-shadow:
+        0 30px 100px rgba(0,0,0,0.65),
+        0 0 50px rgba(48,112,255,0.07);
+
+    animation: loginAppear 0.8s ease;
+}
+
+/* CARD GLOW */
+
+.login-box::before {
+    content: "";
+
+    position: absolute;
+    inset: -1px;
+
+    border-radius: 22px;
+
+    padding: 1px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(57,133,255,0.8),
+            transparent 40%,
+            transparent 65%,
+            rgba(0,229,160,0.5)
+        );
+
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+
+    pointer-events: none;
+}
+
+/* LOGIN BRAND */
+
+.login-box h1 {
+    margin-bottom: 12px;
+
+    font-size: 39px;
+    font-weight: 800;
+
+    letter-spacing: -1.8px;
+
+    background:
+        linear-gradient(
+            100deg,
+            #ffffff,
+            #8bb8ff,
+            #00e5a0
+        );
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.login-box h2 {
+    margin: 35px 0 24px;
+
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.7px;
+}
+
+.login-box p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* ================= INPUT FIELDS ================= */
+
+input {
+    width: 100%;
+
+    padding: 16px;
+
+    margin: 10px 0;
+
+    color: #ffffff !important;
+
+    background: #080e18 !important;
+
+    border: 1px solid rgba(255,255,255,0.10);
+
+    border-radius: 10px;
+
+    outline: none;
+
+    font-size: 14px;
+
+    transition: all 0.3s ease;
+}
+
+input::placeholder {
+    color: #657287;
+}
+
+/* INPUT FOCUS */
+
+input:focus {
+    border-color: var(--blue);
+
+    background: #0b1422 !important;
+
+    box-shadow:
+        0 0 0 3px rgba(57,133,255,0.10),
+        0 0 25px rgba(57,133,255,0.10);
+}
+
+/* CHROME AUTOFILL FIX */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+
+    -webkit-text-fill-color: #ffffff !important;
+
+    -webkit-box-shadow:
+        0 0 0 1000px #080e18 inset !important;
+
+    transition: background-color 9999s ease-in-out 0s;
+}
+
+/* ================= BUTTONS ================= */
+
+button,
+.logout {
+
+    display: inline-block;
+
+    padding: 13px 22px;
+
+    color: #ffffff;
+
+    background:
+        linear-gradient(
+            110deg,
+            #287cff,
+            #4568ee
+        );
+
+    border: 1px solid rgba(255,255,255,0.10);
+
+    border-radius: 9px;
+
+    cursor: pointer;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition: all 0.3s ease;
+}
+
+.login-box button {
+    width: 100%;
+
+    margin: 20px 0;
+
+    padding: 16px;
+
+    font-size: 15px;
+
+    background:
+        linear-gradient(
+            110deg,
+            #287cff,
+            #7958ef
+        );
+}
+
+button:hover,
+.logout:hover {
+
+    transform: translateY(-3px);
+
+    filter: brightness(1.15);
+
+    box-shadow:
+        0 10px 30px rgba(57,133,255,0.25);
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* ================= LINKS ================= */
+
+a {
+    color: var(--blue-light);
+
+    text-decoration: none;
+
+    transition: all 0.25s ease;
+}
+
+a:hover {
+    color: var(--green);
+}
+
+/* ================= FLASH MESSAGES ================= */
+
+.message {
+    color: var(--red);
+
+    margin: 12px 0;
+
+    padding: 10px;
+
+    font-size: 13px;
+
+    background: rgba(255,97,120,0.07);
+
+    border: 1px solid rgba(255,97,120,0.15);
+
+    border-radius: 8px;
+}
+
+/* ================= DASHBOARD ================= */
+
+.dashboard {
+
+    position: relative;
+    z-index: 1;
+
+    max-width: 1250px;
+
+    margin: auto;
+
+    padding: 35px 30px;
+
+    animation: dashboardAppear 0.7s ease;
+}
+
+/* ================= HEADER ================= */
+
+header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 20px;
+
+    padding: 24px 28px;
+
+    background:
+        linear-gradient(
+            120deg,
+            rgba(19,29,44,0.96),
+            rgba(11,17,28,0.96)
+        );
+
+    border: 1px solid var(--border);
+
+    border-radius: 15px;
+
+    backdrop-filter: blur(20px);
+
+    box-shadow:
+        0 12px 40px rgba(0,0,0,0.25);
+}
+
+header h1 {
+
+    font-size: 25px;
+
+    font-weight: 800;
+
+    letter-spacing: -1px;
+
+    color: #ffffff;
+}
+
+/* LOGOUT BUTTON */
+
+.logout {
+
+    margin-left: 15px;
+
+    background:
+        linear-gradient(
+            110deg,
+            #287cff,
+            #4568ee
+        );
+
+    text-decoration: none;
+}
+
+/* ================= WELCOME SECTION ================= */
+
+.welcome {
+
+    margin: 40px 0;
+
+    animation: dashboardAppear 0.8s ease;
+}
+
+.welcome h2 {
+
+    margin-bottom: 12px;
+
+    font-size: 32px;
+
+    font-weight: 800;
+
+    letter-spacing: -1px;
+}
+
+.welcome p {
+
+    color: var(--muted);
+
+    font-size: 14px;
+
+    line-height: 1.7;
+}
+
+/* ================= CARDS ================= */
+
+.card {
+
+    position: relative;
+
+    padding: 30px;
+
+    margin-bottom: 28px;
+
+    color: var(--text);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(20,29,44,0.96),
+            rgba(12,18,29,0.98)
+        );
+
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 15px 45px rgba(0,0,0,0.23);
+
+    transition: all 0.35s ease;
+
+    animation: dashboardAppear 0.8s ease;
+}
+
+.card:hover {
+
+    border-color: rgba(57,133,255,0.30);
+
+    box-shadow:
+        0 20px 55px rgba(0,0,0,0.35),
+        0 0 30px rgba(57,133,255,0.05);
+
+    transform: translateY(-2px);
+}
+
+.card h2 {
+
+    margin-bottom: 24px;
+
+    font-size: 21px;
+
+    font-weight: 700;
+
+    letter-spacing: -0.5px;
+}
+
+/* ================= TABLES ================= */
+
+table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+}
+
+th {
+
+    padding: 17px 14px;
+
+    color: var(--green);
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1.2px;
+
+    background: rgba(0,229,160,0.035);
+}
+
+td {
+
+    padding: 17px 14px;
+
+    color: #c6d0df;
+
+    font-size: 13px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+th,
+td {
+    text-align: left;
+}
+
+tr {
+    transition: background 0.25s ease;
+}
+
+tbody tr:hover {
+    background: rgba(57,133,255,0.055);
+}
+
+/* ================= ACTIVITY TIMELINE ================= */
+
+.activity {
+
+    position: relative;
+
+    padding: 18px;
+
+    margin-bottom: 5px;
+
+    color: #dce5f2;
+
+    border-bottom: 1px solid var(--border);
+
+    transition: all 0.25s ease;
+}
+
+.activity:hover {
+
+    padding-left: 24px;
+
+    background: rgba(0,229,160,0.025);
+}
+
+.activity small {
+
+    display: block;
+
+    margin-top: 8px;
+
+    color: var(--muted);
+
+    font-size: 11px;
+}
+
+/* ================= FORM ELEMENTS ================= */
+
+select,
+textarea {
+
+    width: 100%;
+
+    padding: 13px;
+
+    color: #ffffff;
+
+    background: #080e18;
+
+    border: 1px solid var(--border);
+
+    border-radius: 9px;
+
+    outline: none;
+
+    transition: 0.3s ease;
+}
+
+select:focus,
+textarea:focus {
+
+    border-color: var(--blue);
+
+    box-shadow: 0 0 15px rgba(57,133,255,0.12);
+}
+
+/* FILE INPUT */
+
+input[type="file"] {
+
+    padding: 12px;
+
+    background: #080e18 !important;
+
+    color: var(--muted) !important;
+}
+
+/* ================= SCROLLBAR ================= */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #07090e;
+}
+
+::-webkit-scrollbar-thumb {
+
+    background: #26364b;
+
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--blue);
+}
+
+/* ================= ANIMATIONS ================= */
+
+@keyframes loginAppear {
+
+    from {
+        opacity: 0;
+        transform: translateY(25px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes dashboardAppear {
+
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ================= SELECTION ================= */
+
+::selection {
+
+    color: #ffffff;
+
+    background: rgba(57,133,255,0.45);
+}
+
+/* ================= RESPONSIVE DESIGN ================= */
+
+@media (max-width: 768px) {
+
+    .dashboard {
+        padding: 20px 14px;
+    }
+
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+
+        padding: 20px;
+    }
+
+    header h1 {
+        font-size: 22px;
+    }
+
+    .welcome h2 {
+        font-size: 25px;
+    }
+
+    .card {
+        padding: 20px;
+
+        overflow-x: auto;
+    }
+
+    table {
+        min-width: 600px;
+    }
+
+    .login-box {
+        width: 100%;
+
+        max-width: 440px;
+
+        padding: 35px 24px;
+    }
+
+    .login-box h1 {
+        font-size: 32px;
+    }
+}
+
+/* ================= REDUCED MOTION ================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+
+        animation-duration: 0.01ms !important;
+
+        transition-duration: 0.01ms !important;
+
+        scroll-behavior: auto !important;
+    }
+}
+/* =========================================
+   TRUSTVAULT - TABLE & ACTIONS POLISH
+========================================= */
+
+/* Prevent tables from stretching the page */
+.card {
+    min-width: 0;
+    overflow: hidden;
+}
+
+table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+/* Table cells */
+th,
+td {
+    padding: 17px 14px;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+}
+
+/* Document table column widths */
+th:first-child,
+td:first-child {
+    width: 32%;
+}
+
+th:nth-child(2),
+td:nth-child(2) {
+    width: 10%;
+}
+
+th:nth-child(3),
+td:nth-child(3) {
+    width: 16%;
+}
+
+/* Action column */
+th:last-child,
+td:last-child {
+    width: 42%;
+}
+
+/* Download links */
+td a {
+    display: inline-block;
+    margin-bottom: 12px;
+    color: var(--blue-light);
+    font-weight: 600;
+}
+
+td a:hover {
+    color: var(--green);
+}
+
+/* File upload controls */
+input[type="file"] {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+    padding: 9px;
+
+    margin: 8px 0 12px;
+
+    color: var(--muted) !important;
+    background: #080e18 !important;
+
+    border: 1px solid var(--border);
+    border-radius: 9px;
+
+    font-size: 12px;
+}
+
+/* Modern file selector */
+input[type="file"]::file-selector-button {
+    padding: 9px 13px;
+    margin-right: 12px;
+
+    color: white;
+    background: #1c2d43;
+
+    border: 1px solid #344b68;
+    border-radius: 6px;
+
+    cursor: pointer;
+    transition: 0.25s;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background: #28568c;
+}
+
+/* Replace button */
+td button {
+    padding: 11px 19px;
+    min-width: 155px;
+
+    background: linear-gradient(
+        110deg,
+        #287cff,
+        #4568ee
+    );
+
+    border-radius: 8px;
+}
+
+/* Admin activity table */
+.activity,
+.card table {
+    max-width: 100%;
+}
+
+.card table td {
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* Keep timestamps readable */
+.card table td:last-child {
+    overflow-wrap: anywhere;
+}
+
+/* Better mobile handling */
+@media (max-width: 768px) {
+
+    .card {
+        overflow-x: auto;
+    }
+
+    .card table {
+        min-width: 650px;
+        table-layout: auto;
+    }
+
+    input[type="file"] {
+        min-width: 220px;
+    }
+}
+/* ==========================================
+   TRUSTVAULT - CINEMATIC COMMAND CENTER
+   SUPERHERO INSPIRED EDITION
+========================================== */
+
+:root {
+    --hero-red: #e63946;
+    --hero-gold: #f5bd4f;
+    --hero-blue: #3985ff;
+}
+
+/* CINEMATIC BACKGROUND */
+
+body {
+    background:
+        radial-gradient(
+            circle at 15% 15%,
+            rgba(57,133,255,0.13),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at 85% 20%,
+            rgba(230,57,70,0.10),
+            transparent 32%
+        ),
+        radial-gradient(
+            circle at 50% 100%,
+            rgba(245,189,79,0.06),
+            transparent 40%
+        ),
+        #07090e;
+}
+
+/* COMMAND CENTER HEADER */
+
+header {
+    border-top: 2px solid rgba(245,189,79,0.65);
+
+    box-shadow:
+        0 10px 40px rgba(0,0,0,0.35),
+        0 0 25px rgba(57,133,255,0.05);
+}
+
+header h1 {
+    background: linear-gradient(
+        90deg,
+        #ffffff,
+        #f5bd4f,
+        #e63946
+    );
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* WELCOME MESSAGE */
+
+.welcome {
+    position: relative;
+    padding: 12px 0 25px;
+}
+
+.welcome h2 {
+    color: #ffffff;
+    font-size: 34px;
+    letter-spacing: -1.2px;
+}
+
+.welcome h2::after {
+    content: "  // COMMAND CENTER";
+    color: var(--hero-gold);
+    font-size: 11px;
+    letter-spacing: 2px;
+    vertical-align: middle;
+}
+
+.welcome::after {
+    content: '"Every file has a guardian. Every action leaves a trace."';
+
+    display: block;
+
+    margin-top: 15px;
+
+    color: #aab6c8;
+
+    font-size: 13px;
+    font-style: italic;
+    letter-spacing: 0.5px;
+
+    border-left: 2px solid var(--hero-red);
+    padding-left: 13px;
+}
+
+/* GOLDEN CARD DETAILS */
+
+.card {
+    border-top: 1px solid rgba(245,189,79,0.18);
+}
+
+.card h2 {
+    color: #f2f5fa;
+}
+
+/* SECURITY BUTTONS */
+
+button:hover,
+.logout:hover {
+    box-shadow:
+        0 0 18px rgba(57,133,255,0.3),
+        0 0 30px rgba(230,57,70,0.08);
+}
+
+/* GOLDEN TABLE HEADINGS */
+
+th {
+    color: var(--hero-gold);
+    background: rgba(245,189,79,0.035);
+}
+
+/* ACTIVITY EFFECT */
+
+.activity:hover {
+    border-left: 2px solid var(--hero-red);
+}
+
+/* DEVELOPER CREDIT */
+
+.dashboard::after {
+    content:
+        "TRUSTVAULT  |  DESIGNED & DEVELOPED BY SIVA SHANKAR REDDY";
+
+    display: block;
+
+    margin-top: 45px;
+    padding: 25px 10px;
+
+    text-align: center;
+
+    color: #9aa5b5;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    letter-spacing: 2.5px;
+
+    border-top: 1px solid rgba(245,189,79,0.25);
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(245,189,79,0.035),
+            transparent
+        );
+}
+
+/* CINEMATIC ACCENT LINE */
+
+.dashboard::before {
+    content: "";
+
+    display: block;
+
+    width: 100%;
+    height: 2px;
+
+    margin-bottom: 15px;
+
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--hero-red),
+        var(--hero-gold),
+        var(--hero-blue),
+        transparent
+    );
+
+    opacity: 0.7;
+}
+
+/* SUBTLE ANIMATION */
+
+@keyframes heroGlow {
+    0%, 100% {
+        opacity: 0.65;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+.dashboard::before {
+    animation: heroGlow 4s ease-in-out infinite;
+}

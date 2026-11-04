@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustVault Dashboard</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="dashboard">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        <div class="alert {{ category }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endwith %}
+
+    <header>
+        <div>
+            <h1>🔐 TrustVault</h1>
+            <p>Secure Document Management</p>
+        </div>
+
+        <div>
+            Welcome, {{ current_user.username }}
+            <form action="{{ url_for('logout') }}" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="logout">Logout</button>
+</form>
+        </div>
+    </header>
+
+    <section class="welcome">
+        <h2>Dashboard</h2>
+        <p>Manage and securely share your documents.</p>
+    </section>
+
+
+    <!-- Upload Document -->
+    <section class="card">
+
+        <h2>Upload Document</h2>
+
+        <form action="{{ url_for('upload') }}"
+              method="POST"
+              enctype="multipart/form-data">
+
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <input type="file" name="file" required>
+
+            <button type="submit">Upload Document</button>
+
+        </form>
+
+    </section>
+
+
+    <!-- Documents -->
+    <section class="card">
+
+        <h2>My Documents</h2>
+
+        {% if documents %}
+
+        <table>
+
+            <tr>
+                <th>Document</th>
+                <th>Owner ID</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+
+            {% for doc in documents %}
+
+            <tr>
+
+                <td>{{ doc.filename }}</td>
+
+                <td>{{ doc.owner_id }}</td>
+
+                <td>{{ doc.created_at.strftime('%d-%m-%Y') }}</td>
+
+                <td>
+
+                    <!-- Download -->
+                    <a href="{{ url_for('download', doc_id=doc.id) }}">
+                        Download
+                    </a>
+
+
+                    <!-- Replace Document -->
+                    {% if can_edit.get(doc.id, false) %}
+
+                    <form action="{{ url_for('replace_document', doc_id=doc.id) }}"
+                          method="POST"
+                          enctype="multipart/form-data">
+
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <input type="file" name="file" required>
+
+                        <button type="submit">Replace Document</button>
+
+                    </form>
+
+                    {% endif %}
+
+
+                    <!-- Share Document -->
+                    {% if doc.owner_id == current_user.id %}
+
+                    <form action="{{ url_for('share', doc_id=doc.id) }}"
+                          method="POST">
+
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <input type="text"
+                               name="username"
+                               placeholder="Username"
+                               required>
+
+                        <select name="access">
+
+                            <option value="read">Read Access</option>
+
+                            <option value="edit">Edit Access</option>
+
+                        </select>
+
+                        <button type="submit">Share</button>
+
+                    </form>
+
+
+                    <!-- Existing Permissions -->
+                    {% for permission in permissions.get(doc.id, []) %}
+
+                    <p>
+                        User ID: {{ permission.user_id }}
+                        Access: {{ permission.access }}
+                    </p>
+
+
+                    <!-- Revoke Access -->
+                    <form action="{{ url_for('revoke', doc_id=doc.id, user_id=permission.user_id) }}"
+                          method="POST">
+
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <button type="submit">Revoke Access</button>
+
+                    </form>
+
+                    {% endfor %}
+
+                    {% endif %}
+
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+        {% else %}
+
+        <p>No documents uploaded yet.</p>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- Recent Activity -->
+    <section class="card">
+
+        <h2>Recent Activity</h2>
+
+        {% if logs %}
+
+        <table>
+
+            <tr>
+                <th>User</th>
+                <th>Action</th>
+                <th>Details</th>
+                <th>Date</th>
+            </tr>
+
+            {% for log in logs %}
+
+            <tr>
+
+                <td>
+                    {{ users.get(log.user_id, log.user_id) if users is defined else log.user_id }}
+                </td>
+
+                <td>{{ log.action }}</td>
+
+                <td>{{ log.details }}</td>
+
+                <td>
+                    {{ log.created_at.strftime('%d-%m-%Y %H:%M') }}
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+        {% else %}
+
+        <p>No activity recorded.</p>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- Admin Panel -->
+    {% if current_user.role == 'admin' %}
+
+    <section class="card">
+
+        <h2>Admin Panel</h2>
+
+        <p>Monitor platform activities.</p>
+
+        <a href="{{ url_for('logs') }}">View All Activity Logs</a>
+
+    </section>
+
+    {% endif %}
+
+</div>
+
+</body>
+</html>

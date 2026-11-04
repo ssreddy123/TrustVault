@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustVault | Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <div class="login-box">
+        <h1>🔐 TrustVault</h1>
+        <p>Secure Document Sharing Platform</p>
+
+```
+    <h2>Welcome Back</h2>
+
+    
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
+
+    <p>Don't have an account?
+        <a href="{{ url_for('register') }}">Register</a>
+    </p>
+</div>
+```
+
+</div>
+
+</body>
+</html>
