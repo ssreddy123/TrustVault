@@ -47,8 +47,24 @@ Test cases:
 
 1. CSRF protection rejects POST requests without valid tokens.
 2. Dashboard access is restricted to authenticated users.
+3. Logout requires valid CSRF protection.
+4. Document downloads require authentication.
+5. Private documents cannot be accessed by unauthorized users.
+6. Revoked users cannot download documents.
+7. Normal users cannot access admin activity logs.
+8. Read-only users cannot edit documents.
+9. Users with Edit permission can replace documents.
+10. Read-only users cannot replace documents.
+11. Invalid file uploads are rejected.
+12. Files exceeding the upload size limit are rejected.
+13. Document owners can share documents.
+14. Non-owners cannot share documents.
+15. Document owners can revoke access.
+16. Non-owners cannot revoke access.
+17. Admin users can access documents.
+18. Invalid sharing permissions are rejected.
 
-Test Result: 4 tests passed.
+Test Result: 18 tests passed.
 
 ## 6. Installation and Execution
 
@@ -88,7 +104,9 @@ TrustVault/
 
 ## 8. Future Improvements
 
-* Stronger file-content validation
-* Expanded automated security testing
-* Improved deployment configuration
-* Enhanced audit logging
+* Implement document search and filtering.
+* Add support for additional document formats.
+* Improve audit log filtering and reporting.
+* Implement cloud-based document storage.
+* Enhance mobile responsiveness.
+* Add automated deployment and monitoring.
