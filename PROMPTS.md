@@ -1,28 +1,47 @@
 # AI Usage Documentation – TrustVault
 
-## 1. AI Tools Used
+## AI Tool Used
 
-* ChatGPT
+ChatGPT (GPT-6)
 
-## 2. Purpose of AI Usage
+## Development Log
 
-AI was used as a development assistant to understand Flask, database integration, authentication, document sharing and application debugging.
+### Entry 1 – Flask Application
 
-## 3. Prompts Used
+* Prompt: How can I build a document-sharing application using Flask?
+* AI output: Suggested a Flask application structure and database integration.
+* My verification: Reviewed the generated structure and tested the application.
+* Related commit: `c2aed7c`
 
-* How to create a Flask application.
-* How to implement user registration and login.
-* How to store uploaded documents.
-* How to implement document-sharing permissions.
-* How to maintain activity logs.
-* How to debug Jinja template errors.
+### Entry 2 – Authentication and Access Control
 
-## 4. AI Mistakes and Corrections
+* Prompt: How can I implement login, registration and restrict access to private documents?
+* AI output: Suggested authentication and permission-checking approaches.
+* My verification: Tested login requirements and unauthorized document access.
+* Related commit: `c2aed7c`
 
-* Incorrect Jinja template syntax caused rendering errors.
-* Template blocks were corrected by replacing the dashboard with a clean structure.
-* Application behavior was tested after corrections.
+### Entry 3 – Document Sharing and Audit Logging
 
-## 5. Developer Verification
+* Prompt: How can document owners share files with Read/Edit permissions and revoke access?
+* AI output: Suggested permission-based sharing and activity logging.
+* My verification: Tested sharing, permission changes and access revocation.
+* Related commit: `c2aed7c`
 
-Generated code was reviewed and tested during development. Unfinished features and remaining security limitations will be documented honestly.
+### Entry 4 – Login Debugging
+
+* Prompt: Help debug repeated login flash messages.
+* AI output: Suggested checking the login route and template.
+* What needed correction: The repeated messages were caused by old messages remaining in the session, not duplicate flash calls.
+* My correction: Inspected the Flask route and template, refreshed the page and verified the behaviour.
+* Related commits: `131d6c8`, `e997655`
+
+### Entry 5 – Dashboard Improvements
+
+* Prompt: Help improve dashboard flash messages and layout.
+* AI output: Suggested template changes.
+* My verification: Reviewed the HTML and adjusted the dashboard presentation to match the intended design.
+* Related commit: `e997655`
+
+## Developer Responsibility
+
+I reviewed AI-generated suggestions, tested application behaviour and made corrections where necessary. AI was used as an assistant; I remained responsible for the final implementation.
