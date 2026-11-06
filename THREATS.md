@@ -60,7 +60,7 @@ These limitations are accepted for the current project version and should be add
 
 Automated security tests are implemented using Pytest.
 
-The test suite contains 18 tests covering:
+The test suite contains 20 tests covering:
 
 * CSRF protection.
 * Login requirements.
@@ -74,7 +74,7 @@ The test suite contains 18 tests covering:
 * Administrative log access.
 * Invalid sharing permissions.
 
-**Latest test result: 18 passed, 16 warnings.**
+**Latest test result: 20 passed, 19 warnings.**
 
 Manual testing also covered registration, login, document uploads, downloads, sharing and permission revocation.
 
@@ -82,6 +82,6 @@ Manual testing also covered registration, login, document uploads, downloads, sh
 
 TrustVault includes authentication, authorization, document access controls, file validation and CSRF protection.
 
-All 18 automated tests currently pass.
+All 20 automated tests currently pass.
 
 However, the application still has known limitations. Further security improvements and testing are required before it can be considered suitable for production use.

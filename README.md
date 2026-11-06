@@ -68,7 +68,7 @@ Security tests are implemented using Pytest.
 17. Admin users can access documents.
 18. Invalid sharing permissions are rejected.
 
-**Latest Test Result: 18 tests passed.**
+**Latest Test Result: 20 tests passed, 19 warnings.**
 
 ## 6. Installation and Execution
 
@@ -139,7 +139,7 @@ Register a normal user account through the registration page.
 pytest -v
 ```
 
-Latest test result: **18 passed.**
+Latest test result: **20 passed, 19 warnings.**
 
 ## 7. Demo Setup
 
