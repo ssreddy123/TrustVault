@@ -2,85 +2,86 @@
 
 ## 1. Project Overview
 
-TrustVault is a secure document-sharing web application built using Python and Flask. It allows users to upload documents, share them with other users, manage permissions and monitor document activities.
+TrustVault is a Flask-based document-sharing application. It allows users to upload documents, share them with specific users, manage permissions and track document activities.
 
 ## 2. Important Assets
 
-* User account information
+* User accounts and passwords
 * Uploaded documents
-* User passwords
-* Document-sharing permissions
+* Document permissions
 * Activity logs
 * Application configuration and secret key
 
 ## 3. Potential Security Threats
 
-| Threat                       | Possible Impact                   | Security Protection                      |
-| ---------------------------- | --------------------------------- | ---------------------------------------- |
-| Unauthorized login           | Account compromise                | Password hashing and authentication      |
-| Unauthorized document access | Private data exposure             | Ownership and permission checks          |
-| Malicious file uploads       | Unsafe files stored               | Extension, signature and size validation |
-| Password attacks             | Account compromise                | Password validation                      |
-| Permission abuse             | Unauthorized sharing              | Role and ownership validation            |
-| CSRF attacks                 | Unauthorized actions              | Flask-WTF CSRF protection                |
-| Path traversal               | Unauthorized file access          | Controlled file handling                 |
-| Information leakage          | Exposure of sensitive information | Secure configuration and error handling  |
-| Audit log misuse             | Loss of accountability            | Restricted log access                    |
+| Threat                       | Possible Impact               | Protection                          |
+| ---------------------------- | ----------------------------- | ----------------------------------- |
+| Unauthorized login           | Account compromise            | Password hashing and authentication |
+| Unauthorized document access | Private data exposure         | Ownership and permission checks     |
+| Malicious file uploads       | Unsafe files stored           | File validation and size limits     |
+| Permission abuse             | Unauthorized document sharing | Ownership validation                |
+| CSRF attacks                 | Unauthorized actions          | Flask-WTF CSRF protection           |
+| Path traversal               | Unauthorized file access      | Controlled file handling            |
+| Information leakage          | Exposure of sensitive data    | Secure configuration                |
+| Audit log misuse             | Loss of accountability        | Restricted log access               |
 
 ## 4. Existing Security Measures
 
-The following protections are currently implemented:
+TrustVault currently implements:
 
 * Password hashing using Werkzeug.
 * User authentication using Flask-Login.
-* Role-based access control.
 * Document ownership and permission checks.
-* File extension allowlisting.
-* Basic file signature and structure validation.
-* Maximum upload size restriction of 5 MB.
+* Read and Edit sharing permissions.
+* Permission revocation.
+* File extension validation.
+* Basic file signature validation.
+* Maximum upload size of 5 MB.
 * CSRF protection using Flask-WTF.
 * Environment-based secret key configuration.
 * HTTP-only and SameSite session cookie settings.
-* Restricted access to administrative activity logs.
-* Debug mode disabled.
+* Restricted administrative activity logs.
 
-## 5. Security Improvements Required
+## 5. Accepted Risks and Future Improvements
 
-The following improvements are recommended:
+TrustVault is a challenge project and is not yet intended for production use.
 
-* Implement login attempt rate limiting.
-* Strengthen file-content validation.
-* Improve error handling and security monitoring.
-* Add more automated access-control tests.
-* Review database transaction and file-storage consistency.
-* Configure secure session cookies for HTTPS deployment.
-* Conduct additional security testing before production deployment.
+Some known limitations are:
+
+* Login attempts are not rate-limited.
+* File validation may not detect every malicious file.
+* Audit logs are stored in the application database and are not tamper-proof.
+* SQLite is used instead of a production-scale database.
+* Additional security testing and deployment hardening are needed.
+
+These limitations are accepted for the current project version and should be addressed before production deployment.
 
 ## 6. Security Testing
 
-Automated tests are implemented using Pytest.
+Automated security tests are implemented using Pytest.
 
-Current automated test cases:
+The test suite contains 18 tests covering:
 
-1. Reject POST requests without valid CSRF tokens.
-2. Prevent unauthenticated dashboard access.
-3. Reject logout requests without CSRF tokens.
-4. Prevent unauthenticated document downloads.
-
-Automated test result: 4 tests passed.
-
-Additional manual tests performed:
-
-* Private document access restrictions.
-* Read and Edit permission verification.
-* Document sharing and revocation.
+* CSRF protection.
+* Login requirements.
+* Private document access.
+* Revoked permission restrictions.
+* Read and Edit permission enforcement.
 * Document replacement permissions.
-* Administrative activity log access.
+* File upload validation and size limits.
+* Document sharing and access revocation.
+* Ownership restrictions.
+* Administrative log access.
+* Invalid sharing permissions.
+
+**Latest test result: 18 passed, 16 warnings.**
+
+Manual testing also covered registration, login, document uploads, downloads, sharing and permission revocation.
 
 ## 7. Current Security Status
 
-TrustVault includes multiple security protections covering authentication, authorization, document access, file validation and CSRF protection.
+TrustVault includes authentication, authorization, document access controls, file validation and CSRF protection.
 
-Four automated security tests currently pass.
+All 18 automated tests currently pass.
 
-However, the application is still under development. Additional security testing, deployment hardening and review are required before production use.
+However, the application still has known limitations. Further security improvements and testing are required before it can be considered suitable for production use.
