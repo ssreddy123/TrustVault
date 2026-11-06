@@ -644,7 +644,47 @@ def share(doc_id):
     flash('Document shared successfully.')
 
     return redirect(url_for('dashboard'))
+# ==========================================
+# DELETE DOCUMENT (OWNER ONLY)
+# ==========================================
 
+@app.route('/delete/<int:doc_id>', methods=['POST'])
+@login_required
+def delete_document(doc_id):
+
+    document = db.session.get(Document, doc_id)
+
+    if not document or document.owner_id != current_user.id:
+        flash('Only the document owner can delete this document.')
+        return redirect(url_for('dashboard'))
+
+    file_path = os.path.join(
+        app.config['UPLOAD_FOLDER'],
+        document.stored_name
+    )
+
+    # Remove document permissions
+    Permission.query.filter_by(
+        document_id=doc_id
+    ).delete()
+
+    # Record deletion
+    log_action(
+        'DELETE',
+        f'Deleted document {doc_id}: {document.filename}'
+    )
+
+    # Remove database record
+    db.session.delete(document)
+    db.session.commit()
+
+    # Remove physical file
+    if os.path.isfile(file_path):
+        os.remove(file_path)
+
+    flash('Document deleted successfully.')
+
+    return redirect(url_for('dashboard'))
 
 # ==========================================
 # REVOKE DOCUMENT ACCESS

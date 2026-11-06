@@ -762,3 +762,104 @@ def test_invalid_share_permission_rejected(monkeypatch):
             [document_id],
             [filename]
         )
+# ==========================================
+# TEST 19 - OWNER CAN DELETE DOCUMENT
+# ==========================================
+
+def test_owner_can_delete_document(monkeypatch):
+
+    monkeypatch.setitem(
+        app.config, 'WTF_CSRF_ENABLED', False
+    )
+
+    owner_id = create_user()
+    recipient_id = create_user()
+
+    document_id, filename = create_document(owner_id)
+
+    try:
+        file_path = os.path.join(
+            app.config['UPLOAD_FOLDER'], filename
+        )
+
+        with open(file_path, 'wb') as f:
+            f.write(b'Test document')
+
+        with app.app_context():
+            permission = Permission(
+                document_id=document_id,
+                user_id=recipient_id,
+                access='read'
+            )
+            db.session.add(permission)
+            db.session.commit()
+
+        client = app.test_client()
+        login_client(client, owner_id)
+
+        response = client.post(
+            f'/delete/{document_id}'
+        )
+
+        assert response.status_code == 302
+
+        with app.app_context():
+            assert db.session.get(
+                Document, document_id
+            ) is None
+
+            assert Permission.query.filter_by(
+                document_id=document_id
+            ).first() is None
+
+            assert AuditLog.query.filter_by(
+                user_id=owner_id,
+                action='DELETE'
+            ).first() is not None
+
+        assert not os.path.exists(file_path)
+
+    finally:
+        cleanup(
+            [owner_id, recipient_id],
+            [document_id],
+            [filename]
+        )
+
+
+# ==========================================
+# TEST 20 - NON-OWNER CANNOT DELETE DOCUMENT
+# ==========================================
+
+def test_non_owner_cannot_delete_document(monkeypatch):
+
+    monkeypatch.setitem(
+        app.config, 'WTF_CSRF_ENABLED', False
+    )
+
+    owner_id = create_user()
+    other_user_id = create_user()
+
+    document_id, filename = create_document(owner_id)
+
+    try:
+        client = app.test_client()
+        login_client(client, other_user_id)
+
+        response = client.post(
+            f'/delete/{document_id}'
+        )
+
+        assert response.status_code == 302
+
+        with app.app_context():
+            assert db.session.get(
+                Document, document_id
+            ) is not None
+
+    finally:
+        cleanup(
+            [owner_id, other_user_id],
+            [document_id],
+            [filename]
+        )
