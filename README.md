@@ -65,27 +65,77 @@ Test cases:
 18. Invalid sharing permissions are rejected.
 
 Test Result: 18 tests passed.
-
 ## 6. Installation and Execution
 
-Install dependencies:
+### Prerequisites
 
+* Python 3.13
+* Git
+
+### Step 1: Clone the repository
+
+```bash
+git clone https://github.com/ssreddy123/TrustVault.git
+cd TrustVault
 ```
+
+### Step 2: Create a virtual environment
+
+```bash
+python -m venv .venv
+```
+
+Activate it on Windows:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+### Step 3: Install dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-Set the SECRET_KEY environment variable before running the application.
+### Step 4: Configure environment variables
 
-Run the application:
+On Windows PowerShell:
 
+```powershell
+$env:SECRET_KEY = "your-secret-key"
+$env:ADMIN_PASSWORD = "your-admin-password"
 ```
+
+Use your own secret values. Do not commit them to GitHub.
+
+`ADMIN_PASSWORD` is required when the application creates the initial admin account. If an admin account already exists in the database, it is not recreated.
+
+### Step 5: Run the application
+
+```bash
 python app.py
 ```
 
-Open in your browser:
+The database tables are created automatically.
 
-```
+### Step 6: Open the application
+
+Visit:
+
+```text
 http://127.0.0.1:5000
+```
+
+Register a normal user account through the registration page.
+
+### Step 7: Run automated tests
+
+```bash
+pytest -v
+```
+
+Latest test result: 18 passed.
+
 ```
 
 ## 7. Project Structure
