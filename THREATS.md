@@ -41,6 +41,7 @@ TrustVault currently implements:
 * Environment-based secret key configuration.
 * HTTP-only and SameSite session cookie settings.
 * Restricted administrative activity logs.
+* Audit logging of unauthorized download, share and revoke attempts.
 
 ## 5. Accepted Risks and Future Improvements
 
@@ -60,7 +61,7 @@ These limitations are accepted for the current project version and should be add
 
 Automated security tests are implemented using Pytest.
 
-The test suite contains 20 tests covering:
+The test suite contains 23 tests covering:
 
 * CSRF protection.
 * Login requirements.
@@ -73,8 +74,11 @@ The test suite contains 20 tests covering:
 * Ownership restrictions.
 * Administrative log access.
 * Invalid sharing permissions.
+* Unauthorized download attempts are logged.
+* Unauthorized share attempts are logged.
+* Unauthorized revoke attempts are logged.
 
-**Latest test result: 20 passed, 19 warnings.**
+**Latest test result: 23 passed, 29 warnings (2026-11-09).**
 
 Manual testing also covered registration, login, document uploads, downloads, sharing and permission revocation.
 
@@ -82,6 +86,6 @@ Manual testing also covered registration, login, document uploads, downloads, sh
 
 TrustVault includes authentication, authorization, document access controls, file validation and CSRF protection.
 
-All 20 automated tests currently pass.
+All 23 automated tests currently pass.
 
 However, the application still has known limitations. Further security improvements and testing are required before it can be considered suitable for production use.

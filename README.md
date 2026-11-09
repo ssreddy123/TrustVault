@@ -4,7 +4,11 @@
 
 TrustVault is a secure document-sharing web application built using Python and Flask. It allows users to upload, share, access, and manage documents with permission-based controls.
 
-The application provides Read and Edit permissions, allowing document owners to control who can access their files.
+The application provides Read and Edit permissions, allowing document owners to control who can access their files. Administrators have administrative access, document owners control their own documents, and viewers receive access through sharing permissions.
+
+## Live Demo
+
+https://siva04.pythonanywhere.com/
 
 ## 2. Technologies Used
 
@@ -67,8 +71,13 @@ Security tests are implemented using Pytest.
 16. Non-owners cannot revoke access.
 17. Admin users can access documents.
 18. Invalid sharing permissions are rejected.
+19. Document owners can delete their documents.
+20. Non-owners cannot delete documents.
+21. Unauthorized download attempts are recorded in the audit log.
+22. Unauthorized share attempts are recorded in the audit log.
+23. Unauthorized revoke attempts are recorded in the audit log.
 
-**Latest Test Result: 20 tests passed, 19 warnings.**
+**Latest Test Result: 23 tests passed, 29 warnings (2026-11-09).**
 
 ## 6. Installation and Execution
 
@@ -139,7 +148,7 @@ Register a normal user account through the registration page.
 pytest -v
 ```
 
-Latest test result: **20 passed, 19 warnings.**
+Latest test result: **23 passed, 29 warnings (2026-11-09).**
 
 ## 7. Demo Setup
 

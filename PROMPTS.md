@@ -48,3 +48,10 @@ ChatGPT (GPT-6)
 ## Developer Responsibility
 
 I reviewed AI-generated suggestions, tested application behaviour and made corrections where necessary. AI was used as an assistant; I remained responsible for the final implementation.
+
+### Entry 6 – Unauthorized Access Audit Logging (2026-11-09)
+
+* Prompt: How can I record unauthorized download, share and revoke attempts in the audit log?
+* AI output: Suggested recording denied access attempts and testing the audit behaviour.
+* My verification: Added security tests for unauthorized download, share and revoke attempts. All 23 security tests passed.
+* Related commit: https://github.com/ssreddy123/TrustVault/commit/febc73b
