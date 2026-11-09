@@ -8,7 +8,8 @@
 </head>
 <body>
 
-<div class="container">
+<div class="container login-page">
+
     <div class="login-box">
 
         <h1>🔐 TrustVault</h1>
@@ -41,6 +42,48 @@
         </p>
 
     </div>
+
+    <!-- ACCESS ROLES -->
+
+    <section class="roles-section">
+
+        <div class="roles-heading">
+            <span>SECURE ACCESS CONTROL</span>
+            <h2>TrustVault Access Roles</h2>
+            <p>Every document has controlled access and clear responsibilities.</p>
+        </div>
+
+        <div class="roles-grid">
+
+            <div class="role-card admin-role">
+                <div class="role-icon">🛡️</div>
+                <h3>Administrator</h3>
+                <p>Has administrative access to documents and can monitor platform audit logs.</p>
+                <span class="role-tag">ADMIN ACCESS</span>
+            </div>
+
+            <div class="role-card owner-role">
+                <div class="role-icon">📁</div>
+                <h3>Document Owner</h3>
+                <p>Uploads documents and controls sharing, replacement, deletion and access revocation for their own documents.</p>
+                <span class="role-tag">DOCUMENT CONTROL</span>
+            </div>
+
+            <div class="role-card viewer-role">
+                <div class="role-icon">👁️</div>
+                <h3>Viewer</h3>
+                <p>Accesses documents shared with them according to their assigned Read or Edit permission.</p>
+                <span class="role-tag">GRANTED ACCESS</span>
+            </div>
+
+        </div>
+
+        <p class="roles-note">
+            Access is checked on the server before protected document actions are allowed.
+        </p>
+
+    </section>
+
 </div>
 
 </body>

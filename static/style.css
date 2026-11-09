@@ -1098,3 +1098,127 @@ th {
 .dashboard::before {
     animation: heroGlow 4s ease-in-out infinite;
 }
+/* ==========================================
+   TRUSTVAULT - LOGIN ACCESS ROLES
+========================================== */
+
+.login-page {
+    flex-direction: column;
+    justify-content: center;
+    gap: 35px;
+    padding: 45px 20px;
+}
+
+.roles-section {
+    width: 100%;
+    max-width: 1050px;
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    animation: dashboardAppear 1s ease;
+}
+
+.roles-heading {
+    margin-bottom: 25px;
+}
+
+.roles-heading span {
+    color: var(--hero-gold);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 3px;
+}
+
+.roles-heading h2 {
+    margin: 10px 0;
+    color: #ffffff;
+    font-size: 27px;
+    font-weight: 800;
+}
+
+.roles-heading p {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.roles-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.role-card {
+    position: relative;
+    padding: 28px 22px;
+    text-align: center;
+    background: linear-gradient(
+        145deg,
+        rgba(19,27,41,0.96),
+        rgba(10,15,25,0.98)
+    );
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+}
+
+.role-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--hero-gold);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.35);
+}
+
+.role-icon {
+    font-size: 35px;
+    margin-bottom: 15px;
+}
+
+.role-card h3 {
+    color: #ffffff;
+    font-size: 18px;
+    margin-bottom: 12px;
+}
+
+.role-card p {
+    min-height: 65px;
+    color: #aab6c8;
+    font-size: 12px;
+    line-height: 1.8;
+}
+
+.role-tag {
+    display: inline-block;
+    margin-top: 18px;
+    padding: 7px 12px;
+    color: var(--hero-gold);
+    background: rgba(245,189,79,0.08);
+    border: 1px solid rgba(245,189,79,0.2);
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.roles-note {
+    margin-top: 22px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+@media (max-width: 768px) {
+
+    .login-page {
+        padding: 30px 16px;
+    }
+
+    .roles-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .roles-heading h2 {
+        font-size: 23px;
+    }
+
+    .role-card p {
+        min-height: auto;
+    }
+}
