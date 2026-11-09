@@ -1,0 +1,34 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustVault | Account Email</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <div class="login-box">
+        <h1>TrustVault</h1>
+        <p>Add or update your account email</p>
+
+        <p>Current email: {{ current_user.email or 'Not added' }}</p>
+        <p>Status: {{ 'Verified' if current_user.email_verified else 'Not verified' }}</p>
+
+        {% with messages = get_flashed_messages() %}
+            {% for message in messages %}
+                <p class="message">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="email" name="email" placeholder="Enter Email Address" required>
+            <button type="submit">Save and Verify Email</button>
+        </form>
+
+        <p><a href="{{ url_for('dashboard') }}">Back to Dashboard</a></p>
+    </div>
+</div>
+</body>
+</html>

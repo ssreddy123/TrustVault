@@ -4,6 +4,7 @@ from flask import (
 )
 
 from flask_sqlalchemy import SQLAlchemy
+
 from flask_login import (
     LoginManager, UserMixin, login_user,
     logout_user, login_required, current_user
@@ -17,11 +18,15 @@ from werkzeug.security import (
 
 from werkzeug.utils import secure_filename
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from email.message import EmailMessage
 
 import os
 import zipfile
 import uuid
+import secrets
+import hashlib
+import smtplib
 
 
 # ==========================================
@@ -42,6 +47,7 @@ app.config['UPLOAD_FOLDER'] = os.path.join(
 )
 
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
+
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = True
@@ -90,6 +96,18 @@ class User(UserMixin, db.Model):
 
     password = db.Column(
         db.String(200),
+        nullable=False
+    )
+
+    email = db.Column(
+        db.String(254),
+        unique=True,
+        nullable=True
+    )
+
+    email_verified = db.Column(
+        db.Boolean,
+        default=False,
         nullable=False
     )
 
@@ -172,22 +190,48 @@ class AuditLog(db.Model):
     )
 
 
+class AccountToken(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('user.id'),
+        nullable=False
+    )
+
+    token_hash = db.Column(
+        db.String(64),
+        unique=True,
+        nullable=False
+    )
+
+    purpose = db.Column(
+        db.String(30),
+        nullable=False
+    )
+
+    expires_at = db.Column(
+        db.DateTime,
+        nullable=False
+    )
+
+    used_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+
 # ==========================================
-# USER LOADER
+# ACCOUNT SECURITY HELPERS
 # ==========================================
 
-@login_manager.user_loader
-def load_user(user_id):
+def utc_now():
 
-    try:
-        return db.session.get(User, int(user_id))
-    except (ValueError, TypeError):
-        return None
+    return datetime.now(timezone.utc).replace(
+        tzinfo=None
+    )
 
-
-# ==========================================
-# AUDIT LOG FUNCTION
-# ==========================================
 
 def log_action(action, details=''):
 
@@ -196,6 +240,182 @@ def log_action(action, details=''):
         action=action,
         details=details
     ))
+
+
+def log_account_action(user_id, action, details=''):
+
+    db.session.add(AuditLog(
+        user_id=user_id,
+        action=action,
+        details=details
+    ))
+
+
+def create_account_token(user, purpose):
+
+    # Invalidate previous unused tokens of the same type.
+
+    AccountToken.query.filter_by(
+        user_id=user.id,
+        purpose=purpose,
+        used_at=None
+    ).delete()
+
+    raw_token = secrets.token_urlsafe(32)
+
+    token_hash = hashlib.sha256(
+        raw_token.encode()
+    ).hexdigest()
+
+    token = AccountToken(
+        user_id=user.id,
+        token_hash=token_hash,
+        purpose=purpose,
+        expires_at=utc_now() + timedelta(minutes=15)
+    )
+
+    db.session.add(token)
+
+    db.session.commit()
+
+    return raw_token
+
+
+def get_valid_account_token(raw_token, purpose):
+
+    token_hash = hashlib.sha256(
+        raw_token.encode()
+    ).hexdigest()
+
+    token = AccountToken.query.filter_by(
+        token_hash=token_hash,
+        purpose=purpose,
+        used_at=None
+    ).first()
+
+    if not token:
+        return None
+
+    if token.expires_at <= utc_now():
+        return None
+
+    return token
+
+
+# ==========================================
+# EMAIL CONFIGURATION
+# ==========================================
+
+def send_email(recipient, subject, body):
+
+    host = os.environ.get('SMTP_HOST')
+
+    port = int(
+        os.environ.get('SMTP_PORT', '587')
+    )
+
+    username = os.environ.get('SMTP_USERNAME')
+
+    password = os.environ.get('SMTP_PASSWORD')
+
+    sender = os.environ.get('MAIL_FROM') or username
+
+    if not all([host, username, password, sender]):
+
+        raise RuntimeError(
+            "SMTP configuration is incomplete"
+        )
+
+    message = EmailMessage()
+
+    message['Subject'] = subject
+
+    message['From'] = sender
+
+    message['To'] = recipient
+
+    message.set_content(body)
+
+    if port == 465:
+
+        with smtplib.SMTP_SSL(
+            host, port, timeout=15
+        ) as server:
+
+            server.login(username, password)
+
+            server.send_message(message)
+
+    else:
+
+        with smtplib.SMTP(
+            host, port, timeout=15
+        ) as server:
+
+            server.ehlo()
+
+            server.starttls()
+
+            server.ehlo()
+
+            server.login(username, password)
+
+            server.send_message(message)
+
+
+def send_account_link(user, purpose):
+
+    raw_token = create_account_token(
+        user, purpose
+    )
+
+    if purpose == 'verify_email':
+
+        endpoint = 'verify_email'
+
+        subject = 'Verify your TrustVault email'
+
+        message = 'Click this link to verify your email:'
+
+    else:
+
+        endpoint = 'reset_password'
+
+        subject = 'TrustVault password reset'
+
+        message = 'Click this link to reset your password:'
+
+    link = url_for(
+        endpoint,
+        token=raw_token,
+        _external=True
+    )
+
+    send_email(
+        user.email,
+        subject,
+        f'{message}\n\n{link}\n\n'
+        'This link expires in 15 minutes. '
+        'If you did not request this, ignore this email.'
+    )
+
+
+# ==========================================
+# USER LOADER
+# ==========================================
+
+@login_manager.user_loader
+def load_user(user_id):
+
+    try:
+
+        return db.session.get(
+            User, int(user_id)
+        )
+
+    except (ValueError, TypeError):
+
+        return None
 
 
 # ==========================================
@@ -207,11 +427,13 @@ def allowed_file(file):
     filename = secure_filename(file.filename)
 
     if not filename or '.' not in filename:
+
         return False
 
     extension = filename.rsplit('.', 1)[1].lower()
 
     if extension not in ALLOWED_EXTENSIONS:
+
         return False
 
     file.stream.seek(0)
@@ -220,29 +442,22 @@ def allowed_file(file):
 
     file.stream.seek(0)
 
-    # PDF validation
     if extension == 'pdf':
 
         return header.startswith(b'%PDF-')
 
-    # PNG validation
     if extension == 'png':
 
-        return header.startswith(
-            b'\x89PNG\r\n\x1a\n'
-        )
+        return header.startswith(b'\x89PNG\r\n\x1a\n')
 
-    # JPG and JPEG validation
     if extension in ('jpg', 'jpeg'):
 
         return header.startswith(b'\xff\xd8\xff')
 
-    # TXT validation
     if extension == 'txt':
 
         return b'\x00' not in header
 
-    # DOCX validation
     if extension == 'docx':
 
         try:
@@ -288,13 +503,15 @@ def can_access(document, permission='read'):
     ).first()
 
     if not access:
+
         return False
 
-    # Edit permission also allows read access.
     if permission == 'read':
+
         return access.access in {'read', 'edit'}
 
     if permission == 'edit':
+
         return access.access == 'edit'
 
     return False
@@ -308,6 +525,7 @@ def can_access(document, permission='read'):
 def home():
 
     if current_user.is_authenticated:
+
         return redirect(url_for('dashboard'))
 
     return redirect(url_for('login'))
@@ -326,6 +544,10 @@ def register():
             'username', ''
         ).strip()
 
+        email = request.form.get(
+            'email', ''
+        ).strip().lower()
+
         password = request.form.get(
             'password', ''
         )
@@ -333,31 +555,419 @@ def register():
         if not username or len(password) < 8:
 
             flash(
-                'Enter a username and password with at least 8 characters.'
+                'Enter a username and password '
+                'with at least 8 characters.'
             )
 
             return redirect(url_for('register'))
 
-        if User.query.filter_by(username=username).first():
+        if (
+            len(email) > 254
+            or '@' not in email
+            or email.count('@') != 1
+            or '.' not in email.split('@')[-1]
+        ):
+
+            flash('Enter a valid email address.')
+
+            return redirect(url_for('register'))
+
+        if User.query.filter_by(
+            username=username
+        ).first():
 
             flash('Username already exists.')
 
             return redirect(url_for('register'))
 
+        if User.query.filter_by(
+            email=email
+        ).first():
+
+            flash('Email address already registered.')
+
+            return redirect(url_for('register'))
+
         user = User(
             username=username,
-            password=generate_password_hash(password)
+            email=email,
+            email_verified=False,
+            password=generate_password_hash(password),
+            role='user'
         )
 
         db.session.add(user)
 
         db.session.commit()
 
-        flash('Registration successful. Please login.')
+        try:
+
+            send_account_link(
+                user, 'verify_email'
+            )
+
+        except Exception:
+
+            app.logger.exception(
+                'Registration verification email failed'
+            )
+
+            flash(
+                'Account created, but verification email '
+                'could not be sent. Configure SMTP and '
+                'use Resend Verification.'
+            )
+
+            return redirect(
+                url_for('resend_verification')
+            )
+
+        flash(
+            'Registration successful. '
+            'Check your email to verify your account.'
+        )
 
         return redirect(url_for('login'))
 
     return render_template('register.html')
+
+
+# ==========================================
+# EMAIL VERIFICATION
+# ==========================================
+
+@app.route('/verify-email/<token>')
+def verify_email(token):
+
+    account_token = get_valid_account_token(
+        token, 'verify_email'
+    )
+
+    if not account_token:
+
+        flash(
+            'Verification link is invalid or expired.'
+        )
+
+        return redirect(url_for('login'))
+
+    user = db.session.get(
+        User, account_token.user_id
+    )
+
+    if not user:
+
+        flash('Account not found.')
+
+        return redirect(url_for('login'))
+
+    user.email_verified = True
+
+    account_token.used_at = utc_now()
+
+    log_account_action(
+        user.id,
+        'EMAIL_VERIFIED',
+        'Email address verified successfully'
+    )
+
+    db.session.commit()
+
+    flash(
+        'Email verified successfully. You can now login.'
+    )
+
+    return redirect(url_for('login'))
+
+
+# ==========================================
+# RESEND VERIFICATION
+# ==========================================
+
+@app.route(
+    '/resend-verification',
+    methods=['GET', 'POST']
+)
+def resend_verification():
+
+    if request.method == 'POST':
+
+        email = request.form.get(
+            'email', ''
+        ).strip().lower()
+
+        user = User.query.filter_by(
+            email=email
+        ).first()
+
+        if user and not user.email_verified:
+
+            try:
+
+                send_account_link(
+                    user, 'verify_email'
+                )
+
+            except Exception:
+
+                app.logger.exception(
+                    'Verification email resend failed'
+                )
+
+        flash(
+            'If an unverified account exists for that '
+            'email, a verification link will be sent.'
+        )
+
+        return redirect(
+            url_for('login')
+        )
+
+    return render_template(
+        'resend_verification.html'
+    )
+
+
+# ==========================================
+# FORGOT PASSWORD
+# ==========================================
+
+@app.route(
+    '/forgot-password',
+    methods=['GET', 'POST']
+)
+def forgot_password():
+
+    if request.method == 'POST':
+
+        email = request.form.get(
+            'email', ''
+        ).strip().lower()
+
+        user = User.query.filter_by(
+            email=email,
+            email_verified=True
+        ).first()
+
+        if user:
+
+            try:
+
+                send_account_link(
+                    user, 'password_reset'
+                )
+
+                log_account_action(
+                    user.id,
+                    'PASSWORD_RESET_REQUEST',
+                    'Password reset requested'
+                )
+
+                db.session.commit()
+
+            except Exception:
+
+                db.session.rollback()
+
+                app.logger.exception(
+                    'Password reset email failed'
+                )
+
+        flash(
+            'If a verified account exists for that email, '
+            'a password reset link will be sent.'
+        )
+
+        return redirect(
+            url_for('login')
+        )
+
+    return render_template(
+        'forgot_password.html'
+    )
+
+
+# ==========================================
+# RESET PASSWORD
+# ==========================================
+
+@app.route(
+    '/reset-password/<token>',
+    methods=['GET', 'POST']
+)
+def reset_password(token):
+
+    account_token = get_valid_account_token(
+        token, 'password_reset'
+    )
+
+    if not account_token:
+
+        flash(
+            'Password reset link is invalid or expired.'
+        )
+
+        return redirect(url_for('forgot_password'))
+
+    user = db.session.get(
+        User, account_token.user_id
+    )
+
+    if not user:
+
+        flash('Account not found.')
+
+        return redirect(url_for('forgot_password'))
+
+    if request.method == 'POST':
+
+        password = request.form.get(
+            'password', ''
+        )
+
+        confirm_password = request.form.get(
+            'confirm_password', ''
+        )
+
+        if len(password) < 8:
+
+            flash(
+                'Password must contain at least 8 characters.'
+            )
+
+            return redirect(
+                url_for(
+                    'reset_password',
+                    token=token
+                )
+            )
+
+        if password != confirm_password:
+
+            flash('Passwords do not match.')
+
+            return redirect(
+                url_for(
+                    'reset_password',
+                    token=token
+                )
+            )
+
+        user.password = generate_password_hash(
+            password
+        )
+
+        account_token.used_at = utc_now()
+
+        # Invalidate all other outstanding reset tokens.
+
+        AccountToken.query.filter_by(
+            user_id=user.id,
+            purpose='password_reset',
+            used_at=None
+        ).update({
+            'used_at': utc_now()
+        })
+
+        log_account_action(
+            user.id,
+            'PASSWORD_RESET_SUCCESS',
+            'Password successfully reset'
+        )
+
+        db.session.commit()
+
+        flash(
+            'Password changed successfully. Please login.'
+        )
+
+        return redirect(url_for('login'))
+
+    return render_template(
+        'reset_password.html'
+    )
+
+
+# ==========================================
+# ACCOUNT EMAIL MANAGEMENT
+# ==========================================
+
+@app.route(
+    '/account/email',
+    methods=['GET', 'POST']
+)
+@login_required
+def account_email():
+
+    if request.method == 'POST':
+
+        email = request.form.get(
+            'email', ''
+        ).strip().lower()
+
+        if (
+            len(email) > 254
+            or '@' not in email
+            or email.count('@') != 1
+            or '.' not in email.split('@')[-1]
+        ):
+
+            flash('Enter a valid email address.')
+
+            return redirect(
+                url_for('account_email')
+            )
+
+        existing = User.query.filter_by(
+            email=email
+        ).first()
+
+        if existing and existing.id != current_user.id:
+
+            flash('This email is already registered.')
+
+            return redirect(
+                url_for('account_email')
+            )
+
+        current_user.email = email
+
+        current_user.email_verified = False
+
+        db.session.commit()
+
+        try:
+
+            send_account_link(
+                current_user, 'verify_email'
+            )
+
+        except Exception:
+
+            app.logger.exception(
+                'Account email verification failed'
+            )
+
+            flash(
+                'Email saved, but verification email could '
+                'not be sent. Check SMTP settings.'
+            )
+
+            return redirect(
+                url_for('account_email')
+            )
+
+        flash(
+            'Verification link sent. Check your email.'
+        )
+
+        return redirect(
+            url_for('account_email')
+        )
+
+    return render_template(
+        'account_email.html'
+    )
 
 
 # ==========================================
@@ -377,19 +987,81 @@ def login():
             'password', ''
         )
 
+        selected_role = request.form.get(
+            'selected_role', ''
+        ).strip().lower()
+
+        if selected_role not in {
+            'admin', 'owner', 'viewer'
+        }:
+
+            flash('Please select a valid login type.')
+
+            return redirect(url_for('login'))
+
         user = User.query.filter_by(
             username=username
         ).first()
 
-        if user and check_password_hash(
+        if not user or not check_password_hash(
             user.password, password
         ):
 
-            login_user(user)
+            flash('Invalid username or password.')
 
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('login'))
 
-        flash('Invalid username or password.')
+        # Existing accounts with no email remain usable.
+        # Accounts with an unverified email cannot log in.
+
+        if user.email and not user.email_verified:
+
+            flash(
+                'Please verify your email before logging in.'
+            )
+
+            return redirect(
+                url_for('resend_verification')
+            )
+
+        if selected_role == 'admin':
+
+            if user.role != 'admin':
+
+                flash(
+                    'This account is not an administrator. '
+                    'Please use the correct login option.'
+                )
+
+                return redirect(url_for('login'))
+
+        elif selected_role == 'owner':
+
+            if user.role == 'admin':
+
+                flash(
+                    'Please use Administrator Login '
+                    'for this account.'
+                )
+
+                return redirect(url_for('login'))
+
+        elif selected_role == 'viewer':
+
+            if user.role == 'admin':
+
+                flash(
+                    'Please use Administrator Login '
+                    'for this account.'
+                )
+
+                return redirect(url_for('login'))
+
+        login_user(user)
+
+        flash('Login successful.')
+
+        return redirect(url_for('dashboard'))
 
     return render_template('login.html')
 
@@ -524,8 +1196,6 @@ def replace_document(doc_id):
 
         return 'Document not found', 404
 
-    # Only administrators, owners and users
-    # with Edit permission can replace documents.
     if not can_access(document, 'edit'):
 
         log_action(

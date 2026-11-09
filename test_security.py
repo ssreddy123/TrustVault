@@ -1,7 +1,11 @@
-from app import app, db, User, Document, Permission, AuditLog, can_access
-from werkzeug.security import generate_password_hash
+from app import (
+    app, db, User, Document, Permission, AuditLog,
+    AccountToken, can_access, create_account_token, utc_now
+)
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user
 from io import BytesIO
+from datetime import timedelta
 import uuid
 import os
 
@@ -24,6 +28,18 @@ def create_user(role='user'):
         db.session.commit()
 
         return user.id
+
+
+def create_email_user():
+    user_id = create_user()
+
+    with app.app_context():
+        user = db.session.get(User, user_id)
+        user.email = f'{uuid.uuid4().hex}@example.com'
+        user.email_verified = False
+        db.session.commit()
+
+    return user_id
 
 
 def create_document(owner_id):
@@ -61,6 +77,10 @@ def cleanup(user_ids=None, document_ids=None, filenames=None):
             Permission.document_id.in_(document_ids)
         ).delete(synchronize_session=False)
 
+        AccountToken.query.filter(
+            AccountToken.user_id.in_(user_ids)
+        ).delete(synchronize_session=False)
+
         AuditLog.query.filter(
             AuditLog.user_id.in_(user_ids)
         ).delete(synchronize_session=False)
@@ -80,6 +100,9 @@ def cleanup(user_ids=None, document_ids=None, filenames=None):
         db.session.commit()
 
         for filename in filenames:
+            if not filename:
+                continue
+
             path = os.path.join(
                 app.config['UPLOAD_FOLDER'],
                 filename
@@ -703,7 +726,6 @@ def test_admin_can_access_document():
         assert response.status_code == 200
 
     finally:
-        # Close the download response before deleting the file.
         if response is not None:
             response.close()
 
@@ -762,6 +784,8 @@ def test_invalid_share_permission_rejected(monkeypatch):
             [document_id],
             [filename]
         )
+
+
 # ==========================================
 # TEST 19 - OWNER CAN DELETE DOCUMENT
 # ==========================================
@@ -863,6 +887,8 @@ def test_non_owner_cannot_delete_document(monkeypatch):
             [document_id],
             [filename]
         )
+
+
 # ==========================================
 # TEST 21 - UNAUTHORIZED DOWNLOAD IS LOGGED
 # ==========================================
@@ -901,13 +927,17 @@ def test_unauthorized_download_is_logged():
             [document_id],
             [filename]
         )
+
+
 # ==========================================
 # TEST 22 - UNAUTHORIZED SHARE IS LOGGED
 # ==========================================
 
 def test_unauthorized_share_is_logged(monkeypatch):
 
-    monkeypatch.setitem(app.config, 'WTF_CSRF_ENABLED', False)
+    monkeypatch.setitem(
+        app.config, 'WTF_CSRF_ENABLED', False
+    )
 
     owner_id = create_user()
     other_id = create_user()
@@ -956,7 +986,9 @@ def test_unauthorized_share_is_logged(monkeypatch):
 
 def test_unauthorized_revoke_is_logged(monkeypatch):
 
-    monkeypatch.setitem(app.config, 'WTF_CSRF_ENABLED', False)
+    monkeypatch.setitem(
+        app.config, 'WTF_CSRF_ENABLED', False
+    )
 
     owner_id = create_user()
     other_id = create_user()
@@ -1005,3 +1037,282 @@ def test_unauthorized_revoke_is_logged(monkeypatch):
             [document_id],
             [filename]
         )
+
+
+# ==========================================
+# TEST 24 - EMAIL VERIFICATION SUCCESS
+# ==========================================
+
+def test_email_verification_success():
+
+    user_id = create_email_user()
+
+    try:
+        with app.app_context():
+            user = db.session.get(User, user_id)
+
+            token = create_account_token(
+                user, 'verify_email'
+            )
+
+        client = app.test_client()
+
+        response = client.get(
+            f'/verify-email/{token}',
+            follow_redirects=True
+        )
+
+        assert response.status_code == 200
+
+        with app.app_context():
+            user = db.session.get(User, user_id)
+
+            assert user.email_verified is True
+
+            account_token = AccountToken.query.filter_by(
+                user_id=user_id,
+                purpose='verify_email'
+            ).first()
+
+            assert account_token.used_at is not None
+
+    finally:
+        cleanup([user_id])
+
+
+# ==========================================
+# TEST 25 - EXPIRED VERIFICATION TOKEN REJECTED
+# ==========================================
+
+def test_expired_verification_token_rejected():
+
+    user_id = create_email_user()
+
+    try:
+        with app.app_context():
+            user = db.session.get(User, user_id)
+
+            token = create_account_token(
+                user, 'verify_email'
+            )
+
+            account_token = AccountToken.query.filter_by(
+                user_id=user_id,
+                purpose='verify_email'
+            ).first()
+
+            account_token.expires_at = (
+                utc_now() - timedelta(minutes=1)
+            )
+
+            db.session.commit()
+
+        client = app.test_client()
+
+        response = client.get(
+            f'/verify-email/{token}',
+            follow_redirects=True
+        )
+
+        assert response.status_code == 200
+
+        with app.app_context():
+            user = db.session.get(User, user_id)
+
+            assert user.email_verified is False
+
+    finally:
+        cleanup([user_id])
+
+
+# ==========================================
+# TEST 26 - PASSWORD RESET SUCCESS
+# ==========================================
+
+def test_password_reset_success(monkeypatch):
+
+    monkeypatch.setitem(
+        app.config, 'WTF_CSRF_ENABLED', False
+    )
+
+    user_id = create_email_user()
+
+    try:
+        with app.app_context():
+            user = db.session.get(User, user_id)
+            user.email_verified = True
+            db.session.commit()
+
+            token = create_account_token(
+                user, 'password_reset'
+            )
+
+        client = app.test_client()
+
+        response = client.post(
+            f'/reset-password/{token}',
+            data={
+                'password': 'NewPassword123',
+                'confirm_password': 'NewPassword123'
+            },
+            follow_redirects=True
+        )
+
+        assert response.status_code == 200
+
+        with app.app_context():
+            user = db.session.get(User, user_id)
+
+            assert check_password_hash(
+                user.password,
+                'NewPassword123'
+            )
+
+            account_token = AccountToken.query.filter_by(
+                user_id=user_id,
+                purpose='password_reset'
+            ).first()
+
+            assert account_token.used_at is not None
+
+    finally:
+        cleanup([user_id])
+
+
+# ==========================================
+# TEST 27 - PASSWORD RESET REJECTS SHORT PASSWORD
+# ==========================================
+
+def test_password_reset_rejects_short_password(monkeypatch):
+
+    monkeypatch.setitem(
+        app.config, 'WTF_CSRF_ENABLED', False
+    )
+
+    user_id = create_email_user()
+
+    try:
+        with app.app_context():
+            user = db.session.get(User, user_id)
+
+            token = create_account_token(
+                user, 'password_reset'
+            )
+
+        client = app.test_client()
+
+        response = client.post(
+            f'/reset-password/{token}',
+            data={
+                'password': 'short',
+                'confirm_password': 'short'
+            },
+            follow_redirects=True
+        )
+
+        assert response.status_code == 200
+
+        with app.app_context():
+            account_token = AccountToken.query.filter_by(
+                user_id=user_id,
+                purpose='password_reset'
+            ).first()
+
+            assert account_token.used_at is None
+
+    finally:
+        cleanup([user_id])
+
+
+# ==========================================
+# TEST 28 - PASSWORD RESET REJECTS MISMATCH
+# ==========================================
+
+def test_password_reset_rejects_mismatched_passwords(monkeypatch):
+
+    monkeypatch.setitem(
+        app.config, 'WTF_CSRF_ENABLED', False
+    )
+
+    user_id = create_email_user()
+
+    try:
+        with app.app_context():
+            user = db.session.get(User, user_id)
+
+            token = create_account_token(
+                user, 'password_reset'
+            )
+
+        client = app.test_client()
+
+        response = client.post(
+            f'/reset-password/{token}',
+            data={
+                'password': 'Password123',
+                'confirm_password': 'Different123'
+            },
+            follow_redirects=True
+        )
+
+        assert response.status_code == 200
+
+        with app.app_context():
+            account_token = AccountToken.query.filter_by(
+                user_id=user_id,
+                purpose='password_reset'
+            ).first()
+
+            assert account_token.used_at is None
+
+    finally:
+        cleanup([user_id])
+
+
+# ==========================================
+# TEST 29 - PASSWORD RESET TOKEN CANNOT BE REUSED
+# ==========================================
+
+def test_password_reset_token_cannot_be_reused(monkeypatch):
+
+    monkeypatch.setitem(
+        app.config, 'WTF_CSRF_ENABLED', False
+    )
+
+    user_id = create_email_user()
+
+    try:
+        with app.app_context():
+            user = db.session.get(User, user_id)
+
+            token = create_account_token(
+                user, 'password_reset'
+            )
+
+        client = app.test_client()
+
+        client.post(
+            f'/reset-password/{token}',
+            data={
+                'password': 'NewPassword123',
+                'confirm_password': 'NewPassword123'
+            }
+        )
+
+        response = client.get(
+            f'/reset-password/{token}',
+            follow_redirects=True
+        )
+
+        assert response.status_code == 200
+
+        with app.app_context():
+            account_token = AccountToken.query.filter_by(
+                user_id=user_id,
+                purpose='password_reset'
+            ).first()
+
+            assert account_token.used_at is not None
+
+    finally:
+        cleanup([user_id])

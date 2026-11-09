@@ -1,90 +1,257 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>TrustVault | Login</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .role-selection {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .role-option {
+            padding: 20px 12px;
+            border: 2px solid #344054;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+            background: #172033;
+            color: white;
+        }
+
+        .role-option:hover {
+            border-color: #3b82f6;
+            transform: translateY(-3px);
+        }
+
+        .role-option.selected {
+            border-color: #3b82f6;
+            background: #1e3a5f;
+        }
+
+        .role-option .icon {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        .role-option h3 {
+            font-size: 15px;
+            margin: 8px 0;
+        }
+
+        .role-option p {
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .login-form {
+            margin-top: 25px;
+            text-align: left;
+        }
+
+        .login-form input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            margin: 8px 0 18px;
+            border-radius: 7px;
+        }
+
+        .login-form button {
+            width: 100%;
+            padding: 13px;
+            cursor: pointer;
+        }
+
+        .flash-message {
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 7px;
+            background: #5b2020;
+            color: white;
+        }
+
+        @media (max-width: 650px) {
+            .role-selection {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
 <div class="container login-page">
 
     <div class="login-box">
 
-        <h1>🔐 TrustVault</h1>
-        <p>Secure Document Sharing Platform</p>
+        <h1>TrustVault</h1>
 
-        <h2>Welcome Back</h2>
+        <p>Secure Document Management System</p>
+
+        <h2>Select Your Login Type</h2>
+
+        <div class="role-selection">
+
+            <div class="role-option"
+                 data-role="admin"
+                 onclick="selectRole('admin', this)">
+
+                <div class="icon">🛡️</div>
+
+                <h3>Administrator</h3>
+
+                <p>Manage documents and monitor audit logs.</p>
+
+            </div>
+
+
+            <div class="role-option"
+                 data-role="owner"
+                 onclick="selectRole('owner', this)">
+
+                <div class="icon">📁</div>
+
+                <h3>Document Owner</h3>
+
+                <p>Manage your uploaded documents and sharing.</p>
+
+            </div>
+
+
+            <div class="role-option"
+                 data-role="viewer"
+                 onclick="selectRole('viewer', this)">
+
+                <div class="icon">👁️</div>
+
+                <h3>Viewer</h3>
+
+                <p>Access documents shared with you.</p>
+
+            </div>
+
+        </div>
+
+
+        <div class="login-form">
+
+            <h2 id="login-heading">Choose a login type</h2>
+
+            <form method="POST" action="{{ url_for('login') }}">
+
+                <input type="hidden"
+                       name="csrf_token"
+                       value="{{ csrf_token() }}">
+
+                <input type="hidden"
+                       name="selected_role"
+                       id="selected_role"
+                       value="">
+
+                <label for="username">Username</label>
+
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="Enter username"
+                    required
+                    autocomplete="username"
+                >
+
+                <label for="password">Password</label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter password"
+                    required
+                    autocomplete="current-password"
+                >
+
+                <button type="submit" id="login-button" disabled>
+                    Select a Login Type First
+                </button>
+
+            </form>
+
+        </div>
+
 
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 {% for message in messages %}
-                    <p class="flash-message">{{ message }}</p>
+                    <div class="flash-message">
+                        {{ message }}
+                    </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
-        <form method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <input type="text" name="username"
-                   placeholder="Username" required autocomplete="off">
-
-            <input type="password" name="password"
-                   placeholder="Password" required autocomplete="new-password">
-
-            <button type="submit">Login</button>
-        </form>
-
-        <p>Don't have an account?
-            <a href="{{ url_for('register') }}">Register</a>
+        <p style="margin-top: 20px;">
+            Don't have an account?
+            <a href="{{ url_for('register') }}">Register here</a>
         </p>
 
     </div>
 
-    <!-- ACCESS ROLES -->
-
-    <section class="roles-section">
-
-        <div class="roles-heading">
-            <span>SECURE ACCESS CONTROL</span>
-            <h2>TrustVault Access Roles</h2>
-            <p>Every document has controlled access and clear responsibilities.</p>
-        </div>
-
-        <div class="roles-grid">
-
-            <div class="role-card admin-role">
-                <div class="role-icon">🛡️</div>
-                <h3>Administrator</h3>
-                <p>Has administrative access to documents and can monitor platform audit logs.</p>
-                <span class="role-tag">ADMIN ACCESS</span>
-            </div>
-
-            <div class="role-card owner-role">
-                <div class="role-icon">📁</div>
-                <h3>Document Owner</h3>
-                <p>Uploads documents and controls sharing, replacement, deletion and access revocation for their own documents.</p>
-                <span class="role-tag">DOCUMENT CONTROL</span>
-            </div>
-
-            <div class="role-card viewer-role">
-                <div class="role-icon">👁️</div>
-                <h3>Viewer</h3>
-                <p>Accesses documents shared with them according to their assigned Read or Edit permission.</p>
-                <span class="role-tag">GRANTED ACCESS</span>
-            </div>
-
-        </div>
-
-        <p class="roles-note">
-            Access is checked on the server before protected document actions are allowed.
-        </p>
-
-    </section>
-
 </div>
+
+
+<script>
+
+    function selectRole(role, element) {
+
+        document.querySelectorAll('.role-option').forEach(
+            card => card.classList.remove('selected')
+        );
+
+        element.classList.add('selected');
+
+        document.getElementById('selected_role').value = role;
+
+        const heading = document.getElementById('login-heading');
+        const button = document.getElementById('login-button');
+
+        if (role === 'admin') {
+            heading.textContent = 'Administrator Login';
+            button.textContent = 'Login as Administrator';
+        }
+
+        else if (role === 'owner') {
+            heading.textContent = 'Document Owner Login';
+            button.textContent = 'Login as Document Owner';
+        }
+
+        else if (role === 'viewer') {
+            heading.textContent = 'Viewer Login';
+            button.textContent = 'Login as Viewer';
+        }
+
+        button.disabled = false;
+    }
+
+</script>
 
 </body>
 </html>
+<p>
+    <a href="{{ url_for('forgot_password') }}">Forgot Password?</a>
+</p>
+
+<p>
+    <a href="{{ url_for('resend_verification') }}">Resend Verification Email</a>
+</p>

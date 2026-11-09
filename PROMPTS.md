@@ -55,3 +55,10 @@ I reviewed AI-generated suggestions, tested application behaviour and made corre
 * AI output: Suggested recording denied access attempts and testing the audit behaviour.
 * My verification: Added security tests for unauthorized download, share and revoke attempts. All 23 security tests passed.
 * Related commit: https://github.com/ssreddy123/TrustVault/commit/febc73b
+
+### Entry 7 - Email Verification and Password Recovery (2026-11-09)
+
+* Prompt: How can I implement email verification, resend verification links and secure password recovery in my Flask application?
+* AI output: Suggested email-based verification, hashed account tokens, token expiration, single-use validation and password reset functionality.
+* My verification: Tested registration, email verification and password recovery manually. Added automated tests for successful verification, expired tokens, password reset, password validation and token reuse prevention. All 29 security tests passed.
+* My correction: Reviewed the implementation, configured SMTP credentials through environment variables and tested the email workflow.

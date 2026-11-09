@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,33 +7,37 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
 <div class="container">
     <div class="login-box">
-        <h1>🔐 TrustVault</h1>
+        <h1>TrustVault</h1>
         <p>Create your account</p>
 
-```
-    {% with messages = get_flashed_messages() %}
-        {% for message in messages %}
-            <p class="message">{{ message }}</p>
-        {% endfor %}
-    {% endwith %}
+        {% with messages = get_flashed_messages() %}
+            {% for message in messages %}
+                <p class="message">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
 
-    <form method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="text" name="username" placeholder="Choose Username" required>
-        <input type="password" name="password" placeholder="Choose Password (8 characters minimum)" required>
-        <button type="submit">Register</button>
-    </form>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <p>Already registered?
-        <a href="{{ url_for('login') }}">Login</a>
-    </p>
+            <input type="text" name="username"
+                   placeholder="Choose Username" required>
+
+            <input type="email" name="email"
+                   placeholder="Enter Email Address" required>
+
+            <input type="password" name="password"
+                   placeholder="Choose Password (8 characters minimum)"
+                   minlength="8" required>
+
+            <button type="submit">Register</button>
+        </form>
+
+        <p>Already registered?
+            <a href="{{ url_for('login') }}">Login</a>
+        </p>
+    </div>
 </div>
-```
-
-</div>
-
 </body>
 </html>
