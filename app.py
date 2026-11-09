@@ -589,6 +589,13 @@ def share(doc_id):
         or document.owner_id != current_user.id
     ):
 
+        log_action(
+            'ACCESS_DENIED',
+            f'Denied share attempt for document {doc_id}'
+        )
+
+        db.session.commit()
+
         flash('Only the owner can share this document.')
 
         return redirect(url_for('dashboard'))
@@ -644,6 +651,7 @@ def share(doc_id):
     flash('Document shared successfully.')
 
     return redirect(url_for('dashboard'))
+
 # ==========================================
 # DELETE DOCUMENT (OWNER ONLY)
 # ==========================================
@@ -693,18 +701,15 @@ def delete_document(doc_id):
 @app.route('/revoke/<int:doc_id>/<int:user_id>', methods=['POST'])
 @login_required
 def revoke(doc_id, user_id):
+    document = db.session.get(Document, doc_id)
 
-    document = db.session.get(
-        Document, doc_id
-    )
-
-    if (
-        not document
-        or document.owner_id != current_user.id
-    ):
-
+    if not document or document.owner_id != current_user.id:
+        log_action(
+            'ACCESS_DENIED',
+            f'Denied revoke attempt for document {doc_id}'
+        )
+        db.session.commit()
         flash('Permission denied.')
-
         return redirect(url_for('dashboard'))
 
     permission = Permission.query.filter_by(
@@ -713,20 +718,15 @@ def revoke(doc_id, user_id):
     ).first()
 
     if permission:
-
         db.session.delete(permission)
-
         log_action(
             'REVOKE',
             f'Revoked access to document {doc_id}'
         )
-
         db.session.commit()
-
         flash('Access revoked.')
 
     return redirect(url_for('dashboard'))
-
 
 # ==========================================
 # DOWNLOAD DOCUMENT
@@ -741,6 +741,13 @@ def download(doc_id):
     )
 
     if not document or not can_access(document):
+
+        log_action(
+            'ACCESS_DENIED',
+            f'Denied download attempt for document {doc_id}'
+        )
+
+        db.session.commit()
 
         return 'Access denied', 403
 
@@ -830,3 +837,4 @@ with app.app_context():
 if __name__ == '__main__':
 
     app.run(debug=False)
+

@@ -863,3 +863,145 @@ def test_non_owner_cannot_delete_document(monkeypatch):
             [document_id],
             [filename]
         )
+# ==========================================
+# TEST 21 - UNAUTHORIZED DOWNLOAD IS LOGGED
+# ==========================================
+
+def test_unauthorized_download_is_logged():
+
+    owner_id = create_user()
+    other_user_id = create_user()
+
+    document_id, filename = create_document(owner_id)
+
+    try:
+        client = app.test_client()
+
+        login_client(client, other_user_id)
+
+        response = client.get(
+            f'/download/{document_id}'
+        )
+
+        assert response.status_code == 403
+
+        with app.app_context():
+
+            log = AuditLog.query.filter_by(
+                user_id=other_user_id,
+                action='ACCESS_DENIED'
+            ).first()
+
+            assert log is not None
+            assert str(document_id) in log.details
+
+    finally:
+        cleanup(
+            [owner_id, other_user_id],
+            [document_id],
+            [filename]
+        )
+# ==========================================
+# TEST 22 - UNAUTHORIZED SHARE IS LOGGED
+# ==========================================
+
+def test_unauthorized_share_is_logged(monkeypatch):
+
+    monkeypatch.setitem(app.config, 'WTF_CSRF_ENABLED', False)
+
+    owner_id = create_user()
+    other_id = create_user()
+    recipient_id = create_user()
+
+    document_id, filename = create_document(owner_id)
+
+    try:
+        with app.app_context():
+            recipient = db.session.get(User, recipient_id)
+            username = recipient.username
+
+        client = app.test_client()
+        login_client(client, other_id)
+
+        response = client.post(
+            f'/share/{document_id}',
+            data={
+                'username': username,
+                'access': 'read'
+            }
+        )
+
+        assert response.status_code == 302
+
+        with app.app_context():
+            log = AuditLog.query.filter_by(
+                user_id=other_id,
+                action='ACCESS_DENIED'
+            ).first()
+
+            assert log is not None
+            assert str(document_id) in log.details
+
+    finally:
+        cleanup(
+            [owner_id, other_id, recipient_id],
+            [document_id],
+            [filename]
+        )
+
+
+# ==========================================
+# TEST 23 - UNAUTHORIZED REVOKE IS LOGGED
+# ==========================================
+
+def test_unauthorized_revoke_is_logged(monkeypatch):
+
+    monkeypatch.setitem(app.config, 'WTF_CSRF_ENABLED', False)
+
+    owner_id = create_user()
+    other_id = create_user()
+    reader_id = create_user()
+
+    document_id, filename = create_document(owner_id)
+
+    try:
+        with app.app_context():
+            permission = Permission(
+                document_id=document_id,
+                user_id=reader_id,
+                access='read'
+            )
+
+            db.session.add(permission)
+            db.session.commit()
+
+        client = app.test_client()
+        login_client(client, other_id)
+
+        response = client.post(
+            f'/revoke/{document_id}/{reader_id}'
+        )
+
+        assert response.status_code == 302
+
+        with app.app_context():
+            log = AuditLog.query.filter_by(
+                user_id=other_id,
+                action='ACCESS_DENIED'
+            ).first()
+
+            assert log is not None
+
+            permission = Permission.query.filter_by(
+                document_id=document_id,
+                user_id=reader_id
+            ).first()
+
+            assert permission is not None
+
+    finally:
+        cleanup(
+            [owner_id, other_id, reader_id],
+            [document_id],
+            [filename]
+        )
