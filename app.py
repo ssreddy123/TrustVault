@@ -21,6 +21,7 @@ from datetime import datetime
 
 import os
 import zipfile
+import uuid
 
 
 # ==========================================
@@ -45,8 +46,8 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = True
 
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.instance_path, exist_ok=True)
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 csrf = CSRFProtect(app)
 
@@ -178,7 +179,10 @@ class AuditLog(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
 
-    return db.session.get(User, int(user_id))
+    try:
+        return db.session.get(User, int(user_id))
+    except (ValueError, TypeError):
+        return None
 
 
 # ==========================================
@@ -284,10 +288,16 @@ def can_access(document, permission='read'):
     ).first()
 
     if not access:
-
         return False
 
-    return access.access == 'edit' or permission == 'read'
+    # Edit permission also allows read access.
+    if permission == 'read':
+        return access.access in {'read', 'edit'}
+
+    if permission == 'edit':
+        return access.access == 'edit'
+
+    return False
 
 
 # ==========================================
@@ -298,7 +308,6 @@ def can_access(document, permission='read'):
 def home():
 
     if current_user.is_authenticated:
-
         return redirect(url_for('dashboard'))
 
     return redirect(url_for('login'))
@@ -388,6 +397,7 @@ def login():
 # ==========================================
 # LOGOUT
 # ==========================================
+
 @app.route('/logout', methods=['POST'])
 @login_required
 def logout():
@@ -467,9 +477,7 @@ def upload():
 
         return redirect(url_for('dashboard'))
 
-    stored_name = secure_filename(
-        f'{current_user.id}_{datetime.utcnow().timestamp()}_{original_name}'
-    )
+    stored_name = f'{uuid.uuid4().hex}_{original_name}'
 
     file_path = os.path.join(
         app.config['UPLOAD_FOLDER'],
@@ -516,7 +524,16 @@ def replace_document(doc_id):
 
         return 'Document not found', 404
 
+    # Only administrators, owners and users
+    # with Edit permission can replace documents.
     if not can_access(document, 'edit'):
+
+        log_action(
+            'ACCESS_DENIED',
+            f'Denied replace attempt for document {doc_id}'
+        )
+
+        db.session.commit()
 
         return 'Access denied', 403
 
@@ -536,9 +553,7 @@ def replace_document(doc_id):
 
         return redirect(url_for('dashboard'))
 
-    new_stored_name = secure_filename(
-        f'{current_user.id}_{datetime.utcnow().timestamp()}_{original_name}'
-    )
+    new_stored_name = f'{uuid.uuid4().hex}_{original_name}'
 
     new_path = os.path.join(
         app.config['UPLOAD_FOLDER'],
@@ -558,12 +573,12 @@ def replace_document(doc_id):
 
     log_action(
         'REPLACE',
-        f'Updated document {document.id}'
+        f'Replaced document {document.id}'
     )
 
     db.session.commit()
 
-    if os.path.exists(old_path):
+    if os.path.isfile(old_path):
 
         os.remove(old_path)
 
@@ -652,6 +667,7 @@ def share(doc_id):
 
     return redirect(url_for('dashboard'))
 
+
 # ==========================================
 # DELETE DOCUMENT (OWNER ONLY)
 # ==========================================
@@ -660,10 +676,24 @@ def share(doc_id):
 @login_required
 def delete_document(doc_id):
 
-    document = db.session.get(Document, doc_id)
+    document = db.session.get(
+        Document, doc_id
+    )
 
-    if not document or document.owner_id != current_user.id:
+    if (
+        not document
+        or document.owner_id != current_user.id
+    ):
+
+        log_action(
+            'ACCESS_DENIED',
+            f'Denied delete attempt for document {doc_id}'
+        )
+
+        db.session.commit()
+
         flash('Only the document owner can delete this document.')
+
         return redirect(url_for('dashboard'))
 
     file_path = os.path.join(
@@ -671,28 +701,27 @@ def delete_document(doc_id):
         document.stored_name
     )
 
-    # Remove document permissions
     Permission.query.filter_by(
         document_id=doc_id
     ).delete()
 
-    # Record deletion
     log_action(
         'DELETE',
         f'Deleted document {doc_id}: {document.filename}'
     )
 
-    # Remove database record
     db.session.delete(document)
+
     db.session.commit()
 
-    # Remove physical file
     if os.path.isfile(file_path):
+
         os.remove(file_path)
 
     flash('Document deleted successfully.')
 
     return redirect(url_for('dashboard'))
+
 
 # ==========================================
 # REVOKE DOCUMENT ACCESS
@@ -701,15 +730,25 @@ def delete_document(doc_id):
 @app.route('/revoke/<int:doc_id>/<int:user_id>', methods=['POST'])
 @login_required
 def revoke(doc_id, user_id):
-    document = db.session.get(Document, doc_id)
 
-    if not document or document.owner_id != current_user.id:
+    document = db.session.get(
+        Document, doc_id
+    )
+
+    if (
+        not document
+        or document.owner_id != current_user.id
+    ):
+
         log_action(
             'ACCESS_DENIED',
             f'Denied revoke attempt for document {doc_id}'
         )
+
         db.session.commit()
+
         flash('Permission denied.')
+
         return redirect(url_for('dashboard'))
 
     permission = Permission.query.filter_by(
@@ -718,15 +757,20 @@ def revoke(doc_id, user_id):
     ).first()
 
     if permission:
+
         db.session.delete(permission)
+
         log_action(
             'REVOKE',
             f'Revoked access to document {doc_id}'
         )
+
         db.session.commit()
+
         flash('Access revoked.')
 
     return redirect(url_for('dashboard'))
+
 
 # ==========================================
 # DOWNLOAD DOCUMENT
@@ -837,4 +881,3 @@ with app.app_context():
 if __name__ == '__main__':
 
     app.run(debug=False)
-
